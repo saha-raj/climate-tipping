@@ -9,6 +9,6 @@ export class EarthScene extends THREE.Group {
     }
 
     update() {
-        // Remove rotation for now
+        // Empty update method for now
     }
 }

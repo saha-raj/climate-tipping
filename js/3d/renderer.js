@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EarthScene } from './scenes/earth.js';
+import { SceneManager } from './sceneManager.js';
 
 class Renderer {
     constructor() {
@@ -8,18 +9,27 @@ class Renderer {
         this.setupRenderer();
         this.setupScene();
         this.setupCamera();
-        this.setupControls();
         this.setupLights();
         
         // Create Earth scene
         this.currentScene = new EarthScene();
         this.scene.add(this.currentScene);
         
+        // Add scene manager and pass the current scene
+        this.sceneManager = new SceneManager(this.currentScene);
+        
+        // Fix camera position
+        this.camera.position.set(8, 6, -12);
+        this.camera.lookAt(0, 0, 0);
+        
         // Start animation loop
         this.animate();
         
         // Handle window resize
         window.addEventListener('resize', this.onWindowResize.bind(this));
+        
+        // Remove orbit controls
+        // this.setupControls();
     }
 
     setupRenderer() {
@@ -41,7 +51,8 @@ class Renderer {
             0.1,
             1000
         );
-        this.camera.position.set(6, 3, -12);
+        // Fixed camera position
+        this.camera.position.set(8, 6, -12);
         this.camera.lookAt(0, 0, 0);
     }
 
@@ -67,7 +78,6 @@ class Renderer {
 
     animate() {
         requestAnimationFrame(this.animate.bind(this));
-        this.controls.update();
         this.currentScene.update();
         this.renderer.render(this.scene, this.camera);
     }

@@ -4,9 +4,7 @@ export class Earth extends THREE.Group {
     constructor() {
         super();
         this.createEarth();
-        this.createAtmosphere();
-        this.createShadowCone();
-        this.createLightRay();
+        this.shadowGroup = null;  // Track the shadow group
     }
 
     createEarth() {
@@ -23,7 +21,7 @@ export class Earth extends THREE.Group {
         const material = new THREE.MeshPhongMaterial({
             color: 0x88ccff,
             transparent: true,
-            opacity: 0.2,
+            opacity: 0.4,
         });
         const atmosphere = new THREE.Mesh(geometry, material);
         this.add(atmosphere);
@@ -47,14 +45,17 @@ export class Earth extends THREE.Group {
     }
 
     createShadowCone() {
-        // Create cylinder for shadow cone
-        const radius = 1;    // Match Earth's radius
-        const height = 6;    // 3 Earth diameters long
+        // Remove existing shadow if it exists
+        if (this.shadowGroup) {
+            this.remove(this.shadowGroup);
+        }
+
+        const radius = 1;
+        const height = 6;
         const geometry = new THREE.CylinderGeometry(radius, radius, height, 32);
         
-        // Align cylinder with light direction (along x-axis)
-        geometry.rotateZ(-Math.PI / 2);  // Rotate to point along x-axis
-        geometry.translate(-height/2, 0, 0);  // Center cylinder at origin, extending in -x direction
+        geometry.rotateZ(-Math.PI / 2);
+        geometry.translate(-height/2, 0, 0);
         
         const material = new THREE.MeshBasicMaterial({
             color: 0x000000,
@@ -69,17 +70,18 @@ export class Earth extends THREE.Group {
         const capGeometry = new THREE.CircleGeometry(radius, 32);
         const capMaterial = new THREE.MeshBasicMaterial({
             color: 0x000000,
+            transparent: true,
+            opacity: 0.3,
             side: THREE.DoubleSide
         });
         const cap = new THREE.Mesh(capGeometry, capMaterial);
-        cap.position.x = -height;  // Place at far end of cylinder
-        cap.rotateY(Math.PI / 2);  // Orient perpendicular to cylinder axis
+        cap.position.x = -height;
+        cap.rotateY(Math.PI / 2);
         
-        // Create a group for shadow elements
-        const shadowGroup = new THREE.Group();
-        shadowGroup.add(shadowCone);
-        shadowGroup.add(cap);
+        this.shadowGroup = new THREE.Group();
+        this.shadowGroup.add(shadowCone);
+        this.shadowGroup.add(cap);
         
-        this.add(shadowGroup);
+        this.add(this.shadowGroup);
     }
 }
