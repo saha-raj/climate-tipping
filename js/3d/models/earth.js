@@ -4,7 +4,8 @@ export class Earth extends THREE.Group {
     constructor() {
         super();
         this.createEarth();
-        this.shadowGroup = null;  // Track the shadow group
+        this.shadowGroup = null;
+        this.shadowEndCap = null;  // Store reference to end cap
     }
 
     createEarth() {
@@ -45,7 +46,6 @@ export class Earth extends THREE.Group {
     }
 
     createShadowCone() {
-        // Remove existing shadow if it exists
         if (this.shadowGroup) {
             this.remove(this.shadowGroup);
         }
@@ -66,7 +66,7 @@ export class Earth extends THREE.Group {
         
         const shadowCone = new THREE.Mesh(geometry, material);
         
-        // Add end cap
+        // Create and store end cap
         const capGeometry = new THREE.CircleGeometry(radius, 32);
         const capMaterial = new THREE.MeshBasicMaterial({
             color: 0x000000,
@@ -74,14 +74,23 @@ export class Earth extends THREE.Group {
             opacity: 0.3,
             side: THREE.DoubleSide
         });
-        const cap = new THREE.Mesh(capGeometry, capMaterial);
-        cap.position.x = -height;
-        cap.rotateY(Math.PI / 2);
+        this.shadowEndCap = new THREE.Mesh(capGeometry, capMaterial);
+        this.shadowEndCap.position.x = -height;
+        this.shadowEndCap.rotateY(Math.PI / 2);
         
         this.shadowGroup = new THREE.Group();
         this.shadowGroup.add(shadowCone);
-        this.shadowGroup.add(cap);
+        this.shadowGroup.add(this.shadowEndCap);
         
         this.add(this.shadowGroup);
+    }
+
+    getShadowEndCapPosition() {
+        if (!this.shadowEndCap) return null;
+        
+        // Get world position of end cap
+        const position = new THREE.Vector3();
+        this.shadowEndCap.getWorldPosition(position);
+        return position;
     }
 }

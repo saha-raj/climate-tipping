@@ -59,12 +59,56 @@
             color: rgba(255, 255, 255, 0.9);
             font-weight: 400;
         }
+        .annotation {
+            position: absolute;
+            color: white;
+            font-size: 0.9rem;
+            padding: 0.5rem 0.8rem;
+            background: rgba(51, 51, 51, 0.9);
+            border-radius: 4px;
+            pointer-events: none;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            z-index: 1000;
+        }
+
+        .annotation-line {
+            position: absolute;
+            left: 67%;    /* Adjusted to start from text box bottom */
+            top: 35%;     /* Adjusted to reach end cap center */
+            width: 100px; /* Adjusted length to reach end cap */
+            border-top: 2px dashed rgba(255, 255, 255, 0.5);
+            transform: rotate(60deg);  /* Adjusted angle to point to end cap */
+            transform-origin: left center;
+        }
+        
+        /* Separate container for annotations that need specific positioning */
+        .annotations-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .shadow-annotation {
+            position: absolute;
+            left: 65%;
+            top: 25%;
+            background: rgba(180, 180, 180, 0.2);  /* Lighter gray, semi-transparent */
+            color: white;
+            padding: 0.5rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            max-width: 200px;
+        }
     </style>
 </head>
 <body>
     <div class="animation-container">
         <div class="scene-container" id="scene-container"></div>
         <div class="text-overlay" id="text-overlay"></div>
+        <div class="annotations-container" id="annotations-container"></div>
     </div>
 
     <script type="importmap">

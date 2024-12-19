@@ -12,24 +12,21 @@ class Renderer {
         this.setupLights();
         
         // Create Earth scene
-        this.currentScene = new EarthScene();
-        this.scene.add(this.currentScene);
+        this.earthScene = new EarthScene();
+        this.scene.add(this.earthScene);
         
-        // Add scene manager and pass the current scene
-        this.sceneManager = new SceneManager(this.currentScene);
+        // Pass both renderer and earthScene references
+        this.sceneManager = new SceneManager({
+            renderer: this,
+            earthScene: this.earthScene
+        });
         
         // Fix camera position
         this.camera.position.set(8, 6, -12);
         this.camera.lookAt(0, 0, 0);
         
-        // Start animation loop
         this.animate();
-        
-        // Handle window resize
         window.addEventListener('resize', this.onWindowResize.bind(this));
-        
-        // Remove orbit controls
-        // this.setupControls();
     }
 
     setupRenderer() {
@@ -78,7 +75,7 @@ class Renderer {
 
     animate() {
         requestAnimationFrame(this.animate.bind(this));
-        this.currentScene.update();
+        this.earthScene.update();
         this.renderer.render(this.scene, this.camera);
     }
 }
