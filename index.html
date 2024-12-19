@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Climate Energy Balance Model</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Climate Tipping Points</h1>
+        </header>
+
+        <div class="controls-panel">
+            <div class="parameter-controls">
+                <div class="control-group">
+                    <label for="greenhouse">Greenhouse Gas Parameter (g):</label>
+                    <input type="range" id="greenhouse" min="0" max="0.8" step="0.01">
+                    <span class="value-display" id="greenhouse-value"></span>
+                </div>
+                <div class="control-group">
+                    <label for="initial-temp">Initial Temperature (K):</label>
+                    <input type="range" id="initial-temp" 
+                           min="223" max="323" step="1">
+                    <span class="value-display" id="initial-temp-value"></span>
+                </div>
+            </div>
+            <button id="run-simulation">Run Simulation</button>
+        </div>
+
+        <div class="visualization-container">
+            <div class="plot" id="equilibrium-plot">
+                <h3>Phase Space (dT/dt vs T)</h3>
+                <div class="plot-area"></div>
+            </div>
+            <div class="plot" id="potential-well-plot">
+                <h3>Potential Well</h3>
+                <div class="plot-area"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
