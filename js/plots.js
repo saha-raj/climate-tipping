@@ -101,24 +101,57 @@ export class Plots {
             .attr('stroke-width', 2)
             .attr('d', line);
 
-        // Add equilibrium point
+        // Add arrow marker definition
+        plotArea.selectAll('defs').remove();
+        const defs = plotArea.append('defs');
+        defs.append('marker')
+            .attr('id', 'arrow')
+            .attr('markerUnits', 'strokeWidth')
+            .attr('markerWidth', 8)
+            .attr('markerHeight', 8)
+            .attr('viewBox', '0 0 10 10')
+            .attr('refX', 8)
+            .attr('refY', 5)
+            .attr('orient', 'auto')
+            .append('path')
+            .attr('d', 'M0,1 L6,5 L0,9')
+            .attr('fill', 'none')
+            .attr('stroke', '#666')
+            .attr('stroke-width', 1.5);
+
+        // Calculate where arrow should end (further from the black dot)
+        const DOT_RADIUS = 8;
+        const x1 = x(data.initialTemp);
+        const x2 = x(equilibriumTemp);
+        const dx = x2 - x1;
+        const totalLength = Math.abs(dx);
+        const ratio = (totalLength - DOT_RADIUS) / totalLength;
+        const arrowEnd = x1 + (dx * ratio);
+
+        // Add arrow from initial to equilibrium point
+        plotArea.selectAll('.trajectory-arrow').remove();
+        plotArea.append('line')
+            .attr('class', 'trajectory-arrow')
+            .attr('x1', x1)
+            .attr('y1', y(0))
+            .attr('x2', arrowEnd)
+            .attr('y2', y(0))
+            .attr('stroke', '#666')
+            .attr('stroke-width', 2)
+            .attr('marker-end', 'url(#arrow)');
+
+        // Add points (on top of arrow)
         plotArea.selectAll('.equilibrium-point').remove();
         plotArea.append('circle')
             .attr('class', 'equilibrium-point')
             .attr('cx', x(equilibriumTemp))
-            .attr('cy', y(0))  // y=0 for dT/dt=0
-            .attr('r', 4)
-            .attr('fill', 'black');
+            .attr('cy', y(0));
 
-        // Add initial condition point
-        const initialRate = data.rates[d3.bisector(d => d).left(data.temperatures, data.initialTemp)];
         plotArea.selectAll('.initial-point').remove();
         plotArea.append('circle')
             .attr('class', 'initial-point')
             .attr('cx', x(data.initialTemp))
-            .attr('cy', y(initialRate))
-            .attr('r', 4)
-            .attr('fill', 'green');
+            .attr('cy', y(0));
     }
 
     updatePotentialPlot(potentialData, equilibriumTemp) {
@@ -159,27 +192,14 @@ export class Plots {
             .attr('stroke-width', 2)
             .attr('d', line);
 
-        // Find closest temperature index
+        // Add equilibrium point
         const eqIndex = d3.bisector(d => d).left(potentialData.temps, equilibriumTemp);
         const eqPotential = potentialData.values[eqIndex];
-
-        console.log('Potential plot debug:', {
-            equilibriumTemp,
-            temps: potentialData.temps,
-            index: eqIndex,
-            nearestTemp: potentialData.temps[eqIndex],
-            potentialValue: eqPotential,
-            yScale: y.domain()
-        });
-
-        // Add equilibrium point
         plotArea.selectAll('.equilibrium-point').remove();
         plotArea.append('circle')
             .attr('class', 'equilibrium-point')
             .attr('cx', x(equilibriumTemp))
-            .attr('cy', y(eqPotential))
-            .attr('r', 4)
-            .attr('fill', 'black');
+            .attr('cy', y(eqPotential));
 
         // Add initial condition point
         const initialIndex = d3.bisector(d => d).left(potentialData.temps, potentialData.initialTemp);
@@ -188,8 +208,6 @@ export class Plots {
         plotArea.append('circle')
             .attr('class', 'initial-point')
             .attr('cx', x(potentialData.initialTemp))
-            .attr('cy', y(initialPotential))
-            .attr('r', 4)
-            .attr('fill', 'green');
+            .attr('cy', y(initialPotential));
     }
 }

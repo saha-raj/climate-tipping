@@ -143,9 +143,10 @@ button:disabled {
 }
 
 .equilibrium-point {
-    transition: all 0.3s ease;
+    fill: black;
     stroke: white;
     stroke-width: 1px;
+    r: 8px;
 }
 
 .x-axis, .y-axis {
@@ -165,4 +166,16 @@ button:disabled {
     h1 {
         font-size: 2rem;
     }
+}
+
+.initial-point {
+    fill: green;
+    stroke: white;
+    stroke-width: 1px;
+    r: 8px;
+}
+
+/* Add arrow marker definition */
+.plot-area defs marker#arrow {
+    fill: #666;
 }
