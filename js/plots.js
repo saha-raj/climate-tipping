@@ -4,6 +4,10 @@ export class Plots {
     constructor() {
         this.margins = { top: 40, right: 40, bottom: 60, left: 60 };
         this.setupPlots();
+        
+        // Get dot radius from CSS
+        const computedStyle = getComputedStyle(document.documentElement);
+        this.DOT_RADIUS = parseFloat(computedStyle.getPropertyValue('--dot-radius'));
     }
 
     setupPlots() {
@@ -120,13 +124,11 @@ export class Plots {
             .attr('stroke-width', 1.5);
 
         // Calculate where arrow should end (further from the black dot)
-        const DOT_RADIUS = 8;
         const x1 = x(data.initialTemp);
         const x2 = x(equilibriumTemp);
         const dx = x2 - x1;
         const totalLength = Math.abs(dx);
-        const ratio = (totalLength - DOT_RADIUS) / totalLength;
-        const arrowEnd = x1 + (dx * ratio);
+        const arrowEnd = x1 + (dx * (totalLength - this.DOT_RADIUS) / totalLength);
 
         // Add arrow from initial to equilibrium point
         plotArea.selectAll('.trajectory-arrow').remove();
@@ -178,11 +180,12 @@ export class Plots {
                 .ticks(5)
                 .tickFormat(d => Math.round(d)));
 
-        // Update line
-        const line = d3.line()
+        // Original line definition for the full potential curve
+        const potentialLine = d3.line()
             .x((d, i) => x(potentialData.temps[i]))
             .y(d => y(d));
 
+        // Update the main potential curve
         plotArea.selectAll('.potential-line').remove();
         plotArea.append('path')
             .datum(potentialData.values)
@@ -190,7 +193,7 @@ export class Plots {
             .attr('fill', 'none')
             .attr('stroke', 'green')
             .attr('stroke-width', 2)
-            .attr('d', line);
+            .attr('d', potentialLine);
 
         // Add equilibrium point
         const eqIndex = d3.bisector(d => d).left(potentialData.temps, equilibriumTemp);
@@ -209,5 +212,69 @@ export class Plots {
             .attr('class', 'initial-point')
             .attr('cx', x(potentialData.initialTemp))
             .attr('cy', y(initialPotential));
+
+        // Add arrow marker definition
+        plotArea.selectAll('defs').remove();
+        const defs = plotArea.append('defs');
+        defs.append('marker')
+            .attr('id', 'curved-arrow')
+            .attr('markerUnits', 'strokeWidth')
+            .attr('markerWidth', 8)
+            .attr('markerHeight', 8)
+            .attr('viewBox', '0 0 10 10')
+            .attr('refX', 8)
+            .attr('refY', 5)
+            .attr('orient', 'auto')
+            .append('path')
+            .attr('d', 'M0,1 L6,5 L0,9')
+            .attr('fill', 'none')
+            .attr('stroke', '#666')
+            .attr('stroke-width', 1.5);
+
+        // Find indices for our points
+        const startIndex = d3.bisector(d => d).left(potentialData.temps, potentialData.initialTemp);
+        const endIndex = d3.bisector(d => d).left(potentialData.temps, equilibriumTemp);
+        
+        // Extract the segment of values between our points, ensuring correct direction
+        const segmentTemps = potentialData.temps.slice(
+            Math.min(startIndex, endIndex), 
+            Math.max(startIndex, endIndex) + 1
+        );
+        const segmentValues = potentialData.values.slice(
+            Math.min(startIndex, endIndex), 
+            Math.max(startIndex, endIndex) + 1
+        );
+
+        // If we need to go backwards, reverse the arrays
+        if (startIndex > endIndex) {
+            segmentTemps.reverse();
+            segmentValues.reverse();
+        }
+
+        // Create path segment
+        const segmentLine = d3.line()
+            .x((d, i) => x(segmentTemps[i]))
+            .y(d => y(d));
+
+        // Calculate path length and trim end
+        const tempPath = plotArea.append('path')
+            .attr('d', segmentLine(segmentValues))
+            .style('display', 'none');
+        
+        const pathLength = tempPath.node().getTotalLength();
+        const trimmedLength = pathLength - this.DOT_RADIUS * 3;  // Increased trim amount
+        tempPath.remove();
+
+        // Add the curved arrow path
+        plotArea.selectAll('.trajectory-arrow').remove();
+        plotArea.append('path')
+            .attr('class', 'trajectory-arrow')
+            .datum(segmentValues)
+            .attr('d', segmentLine)
+            .attr('fill', 'none')
+            .attr('stroke', '#666')
+            .attr('stroke-width', 2)
+            .attr('marker-end', 'url(#curved-arrow)')
+            .style('stroke-dasharray', `${trimmedLength} ${pathLength}`);
     }
 }

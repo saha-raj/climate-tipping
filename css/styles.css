@@ -5,6 +5,7 @@
     --plot-background: #ffffff;
     --text-color: #2c3e50;
     --border-color: #e9ecef;
+    --dot-radius: 8px;
 }
 
 * {
@@ -146,7 +147,7 @@ button:disabled {
     fill: black;
     stroke: white;
     stroke-width: 1px;
-    r: 8px;
+    r: var(--dot-radius);
 }
 
 .x-axis, .y-axis {
@@ -172,7 +173,7 @@ button:disabled {
     fill: green;
     stroke: white;
     stroke-width: 1px;
-    r: 8px;
+    r: var(--dot-radius);
 }
 
 /* Add arrow marker definition */
