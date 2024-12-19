@@ -31,7 +31,7 @@ class Renderer {
 
     setupScene() {
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x000000);
+        this.scene.background = new THREE.Color(0x333333);
     }
 
     setupCamera() {
@@ -41,7 +41,8 @@ class Renderer {
             0.1,
             1000
         );
-        this.camera.position.z = 5;
+        this.camera.position.set(6, 3, -12);
+        this.camera.lookAt(0, 0, 0);
     }
 
     setupControls() {
@@ -54,7 +55,7 @@ class Renderer {
         this.scene.add(ambientLight);
 
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        directionalLight.position.set(5, 3, 5);
+        directionalLight.position.set(5, 0, 0);
         this.scene.add(directionalLight);
     }
 
