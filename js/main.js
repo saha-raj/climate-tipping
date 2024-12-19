@@ -49,7 +49,8 @@ class ClimateViz {
         const rates = temps.map(t => this.model.calculateDeltaT(t, greenhouse));
         const phaseData = {
             temperatures: temps,
-            rates: rates
+            rates: rates,
+            initialTemp
         };
         this.plots.updateEquilibriumPlot(phaseData, equilibriumTemp);
 
@@ -59,7 +60,8 @@ class ClimateViz {
         );
         this.plots.updatePotentialPlot({
             temps,
-            values: potentialValues
+            values: potentialValues,
+            initialTemp
         }, equilibriumTemp);
     }
 

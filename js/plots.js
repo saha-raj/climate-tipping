@@ -109,6 +109,16 @@ export class Plots {
             .attr('cy', y(0))  // y=0 for dT/dt=0
             .attr('r', 4)
             .attr('fill', 'black');
+
+        // Add initial condition point
+        const initialRate = data.rates[d3.bisector(d => d).left(data.temperatures, data.initialTemp)];
+        plotArea.selectAll('.initial-point').remove();
+        plotArea.append('circle')
+            .attr('class', 'initial-point')
+            .attr('cx', x(data.initialTemp))
+            .attr('cy', y(initialRate))
+            .attr('r', 4)
+            .attr('fill', 'green');
     }
 
     updatePotentialPlot(potentialData, equilibriumTemp) {
@@ -170,5 +180,16 @@ export class Plots {
             .attr('cy', y(eqPotential))
             .attr('r', 4)
             .attr('fill', 'black');
+
+        // Add initial condition point
+        const initialIndex = d3.bisector(d => d).left(potentialData.temps, potentialData.initialTemp);
+        const initialPotential = potentialData.values[initialIndex];
+        plotArea.selectAll('.initial-point').remove();
+        plotArea.append('circle')
+            .attr('class', 'initial-point')
+            .attr('cx', x(potentialData.initialTemp))
+            .attr('cy', y(initialPotential))
+            .attr('r', 4)
+            .attr('fill', 'green');
     }
 }
