@@ -78,6 +78,9 @@ export class Earth extends THREE.Group {
         this.shadowEndCap.position.x = -height;
         this.shadowEndCap.rotateY(Math.PI / 2);
         
+        // Store reference to end cap position
+        this.shadowEndCapPosition = new THREE.Vector3(-height, 0, 0);
+        
         this.shadowGroup = new THREE.Group();
         this.shadowGroup.add(shadowCone);
         this.shadowGroup.add(this.shadowEndCap);
@@ -85,10 +88,7 @@ export class Earth extends THREE.Group {
         this.add(this.shadowGroup);
     }
 
-    getShadowEndCapPosition() {
-        if (!this.shadowEndCap) return null;
-        
-        // Get world position of end cap
+    getShadowEndCapWorldPosition() {
         const position = new THREE.Vector3();
         this.shadowEndCap.getWorldPosition(position);
         return position;

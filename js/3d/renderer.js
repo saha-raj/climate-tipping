@@ -75,7 +75,15 @@ class Renderer {
 
     animate() {
         requestAnimationFrame(this.animate.bind(this));
+        
+        // Update scene
         this.earthScene.update();
+        
+        // Update annotation positions if they exist
+        if (this.sceneManager) {
+            this.sceneManager.updateAnnotationPosition();
+        }
+        
         this.renderer.render(this.scene, this.camera);
     }
 }
