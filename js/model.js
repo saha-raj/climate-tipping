@@ -15,69 +15,42 @@ export class ClimateModel {
 
     energyIn(temperature) {
         const albedo = this.calculateAlbedo(temperature);
-        return (this.S0 * Math.PI * this.R ** 2 * (1 - albedo));
+        return (this.S0/4) * (1 - albedo);  // Divide S0 by 4 for global average
     }
 
     energyOut(temperature, greenhouse) {
-        return (4 * Math.PI * this.R ** 2 * this.sigma * temperature ** 4 * (1-greenhouse));
+        return this.sigma * temperature**4 * (1-greenhouse);
     }
 
     calculateDeltaT(temperature, greenhouse) {
-        const ein = this.energyIn(temperature);  // W/m²
-        const eout = this.energyOut(temperature, greenhouse);  // W/m²
-        
-        // Add bounds checking here too
-        const deltaT = (ein - eout) / MODEL_PARAMS.HEAT_CAPACITY;
-        
-        if (!isFinite(deltaT)) {
-            console.log('Invalid deltaT:', { ein, eout, temperature, greenhouse });
-            return 0;
-        }
-        
-        return deltaT;
+        const ein = this.energyIn(temperature);
+        const eout = this.energyOut(temperature, greenhouse);
+        return (ein - eout) / MODEL_PARAMS.HEAT_CAPACITY;  // K/s
     }
 
-    simulateTemperature(initialTemp, greenhouse, timeSteps = 1000, dt = 1) {
+    simulateTemperature(initialTemp, greenhouse, timeSteps = 1000, dt = 100) {
         const temps = [initialTemp];
         const times = [0];
         const rates = [this.calculateDeltaT(initialTemp, greenhouse)];
         
-        // Use a smaller timestep for numerical stability
-        dt = 60;  // 1 minute timestep
-        
         for (let i = 1; i < timeSteps; i++) {
-            const deltaT = this.calculateDeltaT(temps[i-1], greenhouse);
-            const newTemp = temps[i-1] + deltaT * dt;
+            // RK4 integration
+            const k1 = this.calculateDeltaT(temps[i-1], greenhouse);
+            const k2 = this.calculateDeltaT(temps[i-1] + 0.5*dt*k1, greenhouse);
+            const k3 = this.calculateDeltaT(temps[i-1] + 0.5*dt*k2, greenhouse);
+            const k4 = this.calculateDeltaT(temps[i-1] + dt*k3, greenhouse);
             
-            // Add bounds checking
-            if (newTemp < MODEL_PARAMS.MIN_TEMP || 
-                newTemp > MODEL_PARAMS.MAX_TEMP || 
-                !isFinite(newTemp)) {
-                console.log('Temperature out of bounds:', newTemp);
-                return {
-                    times, 
-                    temperatures: temps, 
-                    rates,
-                    equilibriumTemp: temps[temps.length - 1]
-                };
-            }
+            const newTemp = temps[i-1] + (dt/6)*(k1 + 2*k2 + 2*k3 + k4);
             
             temps.push(newTemp);
             times.push(i * dt);
-            rates.push(deltaT);
-            
-            // Check for convergence
-            if (Math.abs(deltaT) < 1e-6) {
-                console.log('Converged at step:', i);
-                break;
-            }
+            rates.push(k1);  // Store initial rate for phase space
         }
         
         return {
             times, 
             temperatures: temps, 
-            rates,
-            equilibriumTemp: temps[temps.length - 1]
+            rates
         };
     }
 
