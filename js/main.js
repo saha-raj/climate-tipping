@@ -51,7 +51,7 @@ class ClimateViz {
             temperatures: temps,
             rates: rates
         };
-        this.plots.updateEquilibriumPlot(phaseData);
+        this.plots.updateEquilibriumPlot(phaseData, equilibriumTemp);
 
         // Update potential well plot
         const potentialValues = temps.map(t => 
@@ -60,7 +60,7 @@ class ClimateViz {
         this.plots.updatePotentialPlot({
             temps,
             values: potentialValues
-        });
+        }, equilibriumTemp);
     }
 
     handleResize() {

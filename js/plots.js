@@ -52,7 +52,7 @@ export class Plots {
         return { svg, plotArea, width, height };
     }
 
-    updateEquilibriumPlot(data) {
+    updateEquilibriumPlot(data, equilibriumTemp) {
         const { svg, plotArea, width, height } = this.phasePlot;
         const plotWidth = width - this.margins.left - this.margins.right;
         const plotHeight = height - this.margins.top - this.margins.bottom;
@@ -100,9 +100,18 @@ export class Plots {
             .attr('stroke', 'red')
             .attr('stroke-width', 2)
             .attr('d', line);
+
+        // Add equilibrium point
+        plotArea.selectAll('.equilibrium-point').remove();
+        plotArea.append('circle')
+            .attr('class', 'equilibrium-point')
+            .attr('cx', x(equilibriumTemp))
+            .attr('cy', y(0))  // y=0 for dT/dt=0
+            .attr('r', 4)
+            .attr('fill', 'black');
     }
 
-    updatePotentialPlot(potentialData) {
+    updatePotentialPlot(potentialData, equilibriumTemp) {
         const { svg, plotArea, width, height } = this.potentialPlot;
         const plotWidth = width - this.margins.left - this.margins.right;
         const plotHeight = height - this.margins.top - this.margins.bottom;
@@ -139,5 +148,27 @@ export class Plots {
             .attr('stroke', 'green')
             .attr('stroke-width', 2)
             .attr('d', line);
+
+        // Find closest temperature index
+        const eqIndex = d3.bisector(d => d).left(potentialData.temps, equilibriumTemp);
+        const eqPotential = potentialData.values[eqIndex];
+
+        console.log('Potential plot debug:', {
+            equilibriumTemp,
+            temps: potentialData.temps,
+            index: eqIndex,
+            nearestTemp: potentialData.temps[eqIndex],
+            potentialValue: eqPotential,
+            yScale: y.domain()
+        });
+
+        // Add equilibrium point
+        plotArea.selectAll('.equilibrium-point').remove();
+        plotArea.append('circle')
+            .attr('class', 'equilibrium-point')
+            .attr('cx', x(equilibriumTemp))
+            .attr('cy', y(eqPotential))
+            .attr('r', 4)
+            .attr('fill', 'black');
     }
 }
