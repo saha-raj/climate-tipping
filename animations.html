@@ -73,11 +73,7 @@
 
         .annotation-line {
             position: absolute;
-            left: 67%;    /* Adjusted to start from text box bottom */
-            top: 35%;     /* Adjusted to reach end cap center */
-            width: 100px; /* Adjusted length to reach end cap */
             border-top: 2px dashed rgba(255, 255, 255, 0.5);
-            transform: rotate(60deg);  /* Adjusted angle to point to end cap */
             transform-origin: left center;
         }
         
@@ -93,9 +89,7 @@
         
         .shadow-annotation {
             position: absolute;
-            left: 65%;
-            top: 25%;
-            background: rgba(180, 180, 180, 0.2);  /* Lighter gray, semi-transparent */
+            background: rgba(180, 180, 180, 0.2);
             color: white;
             padding: 0.5rem 0.8rem;
             border-radius: 4px;
@@ -119,6 +113,9 @@
         }
     }
     </script>
-    <script type="module" src="js/3d/renderer.js"></script>
+    <script type="module">
+        import { Renderer } from './js/3d/core/renderer.js';
+        const renderer = new Renderer();
+    </script>
 </body>
 </html>

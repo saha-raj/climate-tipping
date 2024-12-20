@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { EarthScene } from './scenes/earth.js';
+import { EarthScene } from '../scenes/earth.js';
 import { SceneManager } from './sceneManager.js';
 
-class Renderer {
+export class Renderer {
     constructor() {
         this.container = document.getElementById('scene-container');
         this.setupRenderer();
