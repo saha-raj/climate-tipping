@@ -102,11 +102,15 @@ export class Earth extends THREE.Group {
         this.irArrows = new THREE.Group();
         
         // Arrow parameters
-        const arrowLength = 0.5;  // Length from surface outward
-        const arrowColor = 0xff4444;  // Reddish color
-        const numArrows = 12;  // Around equator
-        const numLatitudes = 3;  // Different latitude bands
+        const arrowLength = 1.5;  // Increased from 0.5 to 1.0
+        const arrowColor = 0xff4444;
+        const numArrows = 6;  // Reduced from 12 to 6 around equator
+        const numLatitudes = 3;  // Keep 3 latitude bands
         
+        // Add North pole arrow
+        this.addWigglyArrow(new THREE.Vector3(0, 1, 0), arrowLength, arrowColor);
+        
+        // Add latitude band arrows
         for (let lat = 0; lat < numLatitudes; lat++) {
             const latAngle = (Math.PI / (numLatitudes + 1)) * (lat + 1);
             const radius = Math.sin(latAngle);
@@ -116,22 +120,66 @@ export class Earth extends THREE.Group {
                 const angle = (2 * Math.PI * i) / numArrows;
                 const x = radius * Math.cos(angle);
                 const z = radius * Math.sin(angle);
-
                 const direction = new THREE.Vector3(x, y, z).normalize();
-                
-                // Create arrow pointing outward
-                const arrowGeometry = new THREE.CylinderGeometry(0.02, 0.05, arrowLength, 8);
-                const arrowMaterial = new THREE.MeshBasicMaterial({ color: arrowColor });
-                const arrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
-                
-                // Position at surface and point outward
-                arrow.position.copy(direction);
-                arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
-                
-                this.irArrows.add(arrow);
+                this.addWigglyArrow(direction, arrowLength, arrowColor);
             }
         }
         
+        // Add South pole arrow
+        this.addWigglyArrow(new THREE.Vector3(0, -1, 0), arrowLength, arrowColor);
+        
         this.add(this.irArrows);
+    }
+
+    addWigglyArrow(direction, length, color) {
+        // Create a curved path for the arrow
+        const numPoints = 20;
+        const points = [];
+        const amplitude = 0.05;    
+        const frequency = 12;       
+        
+        for (let i = 0; i <= numPoints; i++) {
+            const t = i / numPoints;
+            
+            // Choose different reference vector for poles
+            let perpX;
+            if (Math.abs(direction.y) > 0.99) {  // If we're close to poles
+                perpX = new THREE.Vector3(1, 0, 0).normalize();  // Use x-axis as reference
+            } else {
+                perpX = new THREE.Vector3().crossVectors(direction, new THREE.Vector3(0, 1, 0)).normalize();
+            }
+            
+            const perpY = new THREE.Vector3().crossVectors(direction, perpX).normalize();
+            
+            const wiggleX = Math.sin(t * Math.PI * frequency) * amplitude;
+            const wiggleY = Math.cos(t * Math.PI * frequency) * amplitude;
+            
+            const pos = direction.clone()
+                .multiplyScalar(t * length)
+                .add(perpX.multiplyScalar(wiggleX))
+                .add(perpY.multiplyScalar(wiggleY));
+            
+            points.push(pos);
+        }
+        
+        // Create the curved line
+        const curve = new THREE.CatmullRomCurve3(points);
+        const geometry = new THREE.TubeGeometry(curve, numPoints, 0.02, 8, false);
+        const material = new THREE.MeshBasicMaterial({ color: color });
+        const arrow = new THREE.Mesh(geometry, material);
+        
+        // Add arrowhead with corrected orientation
+        const coneGeometry = new THREE.ConeGeometry(0.05, 0.1, 8);
+        const cone = new THREE.Mesh(coneGeometry, material);
+        
+        // Get the tangent at the end of the curve
+        const endTangent = curve.getTangent(1);
+        cone.position.copy(points[points.length - 1]);
+        cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), endTangent);
+        
+        const arrowGroup = new THREE.Group();
+        arrowGroup.add(arrow);
+        arrowGroup.add(cone);
+        this.irArrows.add(arrowGroup);
     }
 }

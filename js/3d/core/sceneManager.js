@@ -160,6 +160,12 @@ export class SceneManager {
             this.earthScene.earth.shadowGroup = null;
         }
         
+        // Clear IR arrows if they exist
+        if (this.earthScene.earth.irArrows) {
+            this.earthScene.earth.remove(this.earthScene.earth.irArrows);
+            this.earthScene.earth.irArrows = null;
+        }
+        
         // Clear annotations
         document.getElementById('annotations-container').innerHTML = '';
     }
