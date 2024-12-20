@@ -132,54 +132,88 @@ export class Earth extends THREE.Group {
     }
 
     addWigglyArrow(direction, length, color) {
-        // Create a curved path for the arrow
-        const numPoints = 20;
-        const points = [];
-        const amplitude = 0.05;    
-        const frequency = 12;       
+        // Constants
+        const numPoints = 100;
+        const amplitude = 0.05;
+        const frequency = 16;
+        const lineWidth = 0.012;
+        const straightTipLength = 0.1;
+        const arrowHeadLength = 0.12;
+        const arrowHeadWidth = 0.08;
         
-        for (let i = 0; i <= numPoints; i++) {
-            const t = i / numPoints;
-            
-            // Choose different reference vector for poles
-            let perpX;
-            if (Math.abs(direction.y) > 0.99) {  // If we're close to poles
-                perpX = new THREE.Vector3(1, 0, 0).normalize();  // Use x-axis as reference
-            } else {
-                perpX = new THREE.Vector3().crossVectors(direction, new THREE.Vector3(0, 1, 0)).normalize();
-            }
-            
-            const perpY = new THREE.Vector3().crossVectors(direction, perpX).normalize();
-            
-            const wiggleX = Math.sin(t * Math.PI * frequency) * amplitude;
-            const wiggleY = Math.cos(t * Math.PI * frequency) * amplitude;
-            
-            const pos = direction.clone()
-                .multiplyScalar(t * length)
-                .add(perpX.multiplyScalar(wiggleX))
-                .add(perpY.multiplyScalar(wiggleY));
-            
-            points.push(pos);
+        const points = [];
+        
+        // Create random rotation around the direction vector
+        const randomAngle = Math.random() * Math.PI * 2;
+        const up = new THREE.Vector3(0, 1, 0);
+        let perpWave = new THREE.Vector3().crossVectors(direction, up).normalize();
+        if (perpWave.lengthSq() < 0.1) {
+            perpWave.set(1, 0, 0);
         }
         
-        // Create the curved line
+        perpWave.applyAxisAngle(direction, randomAngle);
+        
+        // Create the wave points
+        const waveLength = length - straightTipLength;
+        for (let i = 0; i <= numPoints; i++) {
+            const t = i / numPoints;
+            const basePos = direction.clone().multiplyScalar(t * waveLength);
+            
+            const fadeOut = t > 0.8 ? (1 - (t - 0.8) / 0.2) : 1;
+            const wave = Math.sin(t * Math.PI * frequency) * amplitude * fadeOut;
+            
+            const waveDisplacement = perpWave.clone().multiplyScalar(wave);
+            const finalPos = basePos.add(waveDisplacement);
+            points.push(finalPos);
+        }
+        
+        // Add final straight segment
+        const lastPoint = points[points.length - 1];
+        const straightEnd = lastPoint.clone().add(direction.clone().multiplyScalar(straightTipLength));
+        points.push(straightEnd);
+        
+        // Create the wave curve
         const curve = new THREE.CatmullRomCurve3(points);
-        const geometry = new THREE.TubeGeometry(curve, numPoints, 0.02, 8, false);
+        const geometry = new THREE.TubeGeometry(
+            curve, 
+            128,
+            lineWidth,
+            12,
+            false
+        );
         const material = new THREE.MeshBasicMaterial({ color: color });
         const arrow = new THREE.Mesh(geometry, material);
         
-        // Add arrowhead with corrected orientation
-        const coneGeometry = new THREE.ConeGeometry(0.05, 0.1, 8);
-        const cone = new THREE.Mesh(coneGeometry, material);
+        // Create arrowhead as two separate tubes
+        const arrowHeadGroup = new THREE.Group();
         
-        // Get the tangent at the end of the curve
-        const endTangent = curve.getTangent(1);
-        cone.position.copy(points[points.length - 1]);
-        cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), endTangent);
+        // Left side of arrowhead
+        const leftPoint = new THREE.Vector3(-arrowHeadLength, arrowHeadWidth/2, 0);
+        const tipPoint = new THREE.Vector3(0, 0, 0);
+        const leftCurve = new THREE.LineCurve3(leftPoint, tipPoint);
+        const leftTube = new THREE.Mesh(
+            new THREE.TubeGeometry(leftCurve, 8, lineWidth, 8, false),
+            material
+        );
+        
+        // Right side of arrowhead
+        const rightPoint = new THREE.Vector3(-arrowHeadLength, -arrowHeadWidth/2, 0);
+        const rightCurve = new THREE.LineCurve3(rightPoint, tipPoint);
+        const rightTube = new THREE.Mesh(
+            new THREE.TubeGeometry(rightCurve, 8, lineWidth, 8, false),
+            material
+        );
+        
+        arrowHeadGroup.add(leftTube);
+        arrowHeadGroup.add(rightTube);
+        
+        // Position and orient arrowhead
+        arrowHeadGroup.position.copy(straightEnd);
+        arrowHeadGroup.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), direction);
         
         const arrowGroup = new THREE.Group();
         arrowGroup.add(arrow);
-        arrowGroup.add(cone);
+        arrowGroup.add(arrowHeadGroup);
         this.irArrows.add(arrowGroup);
     }
 }

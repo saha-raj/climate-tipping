@@ -88,13 +88,17 @@ export class SceneManager {
                 exitThreshold: 0.7
             },
             {
-                objects: ['earth', 'shadowCylinder', 'irArrows', 'scene2Text'],
+                objects: ['earth', 'irArrows', 'scene2Text'],
                 states: [
                     {
                         threshold: 0.7,
                         setup: () => {
                             this.resetToDefaultCamera();
                             this.updateText();
+                            if (this.earthScene.earth.shadowGroup) {
+                                this.earthScene.earth.remove(this.earthScene.earth.shadowGroup);
+                                this.earthScene.earth.shadowGroup = null;
+                            }
                             this.earthScene.earth.createIRArrows();
                             
                             const annotDef = this.objectRegistry.getDefinition('irArrowsAnnotation');
@@ -115,7 +119,6 @@ export class SceneManager {
                         setup: () => {
                             this.earthScene.earth.createAtmosphere();
                             
-                            // Get atmosphere annotation content from registry
                             const annotDef = this.objectRegistry.getDefinition('atmosphereAnnotation');
                             const annotationsContainer = document.getElementById('annotations-container');
                             annotationsContainer.innerHTML = `
@@ -124,12 +127,25 @@ export class SceneManager {
                                 </div>
                             `;
                             
-                            // Force browser reflow
                             void annotationsContainer.offsetHeight;
-                            
-                            // Fade in
                             const annotation = annotationsContainer.querySelector('.annotation');
                             annotation.style.opacity = '1';
+                        }
+                    },
+                    {
+                        threshold: 0.85,
+                        setup: () => {
+                            // Keep same direction but zoom in
+                            const zoomedPosition = this.DEFAULT_CAMERA.position.clone()
+                                .normalize()
+                                .multiplyScalar(4); // Closer distance of 4 units instead of original ~15
+                            
+                            this.animateCamera(
+                                this.renderer.camera.position.clone(),
+                                zoomedPosition,
+                                this.DEFAULT_CAMERA.target,
+                                2000 // 2 seconds duration
+                            );
                         }
                     }
                 ],
@@ -325,6 +341,30 @@ export class SceneManager {
             const newPosition = startPosition.clone().lerp(this.DEFAULT_CAMERA.position, eased);
             this.renderer.camera.position.copy(newPosition);
             this.renderer.camera.lookAt(this.DEFAULT_CAMERA.target);
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+        
+        animate();
+    }
+
+    animateCamera(startPos, endPos, target, duration) {
+        const startTime = Date.now();
+        
+        const animate = () => {
+            const currentTime = Date.now();
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Smooth easing function
+            const eased = 1 - Math.pow(1 - progress, 3);
+            
+            // Interpolate position
+            const newPosition = startPos.clone().lerp(endPos, eased);
+            this.renderer.camera.position.copy(newPosition);
+            this.renderer.camera.lookAt(target);
             
             if (progress < 1) {
                 requestAnimationFrame(animate);
