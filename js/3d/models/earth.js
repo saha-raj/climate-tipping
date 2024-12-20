@@ -18,14 +18,16 @@ export class Earth extends THREE.Group {
     }
 
     createAtmosphere() {
-        const geometry = new THREE.SphereGeometry(1.1, 32, 32);
-        const material = new THREE.MeshPhongMaterial({
-            color: 0x88ccff,
-            transparent: true,
-            opacity: 0.4,
-        });
-        const atmosphere = new THREE.Mesh(geometry, material);
-        this.add(atmosphere);
+        if (!this.atmosphere) {
+            const geometry = new THREE.SphereGeometry(1.1, 32, 32);
+            const material = new THREE.MeshPhongMaterial({
+                color: 0x88ccff,
+                transparent: true,
+                opacity: 0.4,
+            });
+            this.atmosphere = new THREE.Mesh(geometry, material);
+            this.add(this.atmosphere);
+        }
     }
 
     createLightRay() {
@@ -95,40 +97,38 @@ export class Earth extends THREE.Group {
     }
 
     createIRArrows() {
-        if (this.irArrows) {
-            this.remove(this.irArrows);
-        }
-
-        this.irArrows = new THREE.Group();
-        
-        // Arrow parameters
-        const arrowLength = 1.5;  // Increased from 0.5 to 1.0
-        const arrowColor = 0xff4444;
-        const numArrows = 6;  // Reduced from 12 to 6 around equator
-        const numLatitudes = 3;  // Keep 3 latitude bands
-        
-        // Add North pole arrow
-        this.addWigglyArrow(new THREE.Vector3(0, 1, 0), arrowLength, arrowColor);
-        
-        // Add latitude band arrows
-        for (let lat = 0; lat < numLatitudes; lat++) {
-            const latAngle = (Math.PI / (numLatitudes + 1)) * (lat + 1);
-            const radius = Math.sin(latAngle);
-            const y = Math.cos(latAngle);
+        if (!this.irArrows) {
+            this.irArrows = new THREE.Group();
             
-            for (let i = 0; i < numArrows; i++) {
-                const angle = (2 * Math.PI * i) / numArrows;
-                const x = radius * Math.cos(angle);
-                const z = radius * Math.sin(angle);
-                const direction = new THREE.Vector3(x, y, z).normalize();
-                this.addWigglyArrow(direction, arrowLength, arrowColor);
+            // Arrow parameters
+            const arrowLength = 1.5;  // Increased from 0.5 to 1.0
+            const arrowColor = 0xff4444;
+            const numArrows = 6;  // Reduced from 12 to 6 around equator
+            const numLatitudes = 3;  // Keep 3 latitude bands
+            
+            // Add North pole arrow
+            this.addWigglyArrow(new THREE.Vector3(0, 1, 0), arrowLength, arrowColor);
+            
+            // Add latitude band arrows
+            for (let lat = 0; lat < numLatitudes; lat++) {
+                const latAngle = (Math.PI / (numLatitudes + 1)) * (lat + 1);
+                const radius = Math.sin(latAngle);
+                const y = Math.cos(latAngle);
+                
+                for (let i = 0; i < numArrows; i++) {
+                    const angle = (2 * Math.PI * i) / numArrows;
+                    const x = radius * Math.cos(angle);
+                    const z = radius * Math.sin(angle);
+                    const direction = new THREE.Vector3(x, y, z).normalize();
+                    this.addWigglyArrow(direction, arrowLength, arrowColor);
+                }
             }
+            
+            // Add South pole arrow
+            this.addWigglyArrow(new THREE.Vector3(0, -1, 0), arrowLength, arrowColor);
+            
+            this.add(this.irArrows);
         }
-        
-        // Add South pole arrow
-        this.addWigglyArrow(new THREE.Vector3(0, -1, 0), arrowLength, arrowColor);
-        
-        this.add(this.irArrows);
     }
 
     addWigglyArrow(direction, length, color) {

@@ -71,12 +71,17 @@ export class SceneManager {
                             const annotDef = this.objectRegistry.getDefinition('shadowAnnotation');
                             const annotationsContainer = document.getElementById('annotations-container');
                             annotationsContainer.innerHTML = `
-                                <div class="shadow-annotation">
+                                <div class="annotation" style="opacity: 0">
                                     ${annotDef.content}
                                 </div>
-                                <div class="annotation-line"></div>
                             `;
-                            this.updateAnnotationPosition();
+                            
+                            // Force browser reflow
+                            void annotationsContainer.offsetHeight;
+                            
+                            // Fade in
+                            const annotation = annotationsContainer.querySelector('.annotation');
+                            annotation.style.opacity = '1';
                         }
                     }
                 ],
@@ -92,14 +97,39 @@ export class SceneManager {
                             this.updateText();
                             this.earthScene.earth.createIRArrows();
                             
-                            // Get annotation content from registry
                             const annotDef = this.objectRegistry.getDefinition('irArrowsAnnotation');
                             const annotationsContainer = document.getElementById('annotations-container');
                             annotationsContainer.innerHTML = `
-                                <div class="shadow-annotation">
+                                <div class="annotation" style="opacity: 0">
                                     ${annotDef.content}
                                 </div>
                             `;
+                            
+                            void annotationsContainer.offsetHeight;
+                            const annotation = annotationsContainer.querySelector('.annotation');
+                            annotation.style.opacity = '1';
+                        }
+                    },
+                    {
+                        threshold: 0.8,
+                        setup: () => {
+                            this.earthScene.earth.createAtmosphere();
+                            
+                            // Get atmosphere annotation content from registry
+                            const annotDef = this.objectRegistry.getDefinition('atmosphereAnnotation');
+                            const annotationsContainer = document.getElementById('annotations-container');
+                            annotationsContainer.innerHTML = `
+                                <div class="annotation" style="opacity: 0">
+                                    ${annotDef.content}
+                                </div>
+                            `;
+                            
+                            // Force browser reflow
+                            void annotationsContainer.offsetHeight;
+                            
+                            // Fade in
+                            const annotation = annotationsContainer.querySelector('.annotation');
+                            annotation.style.opacity = '1';
                         }
                     }
                 ],
@@ -125,8 +155,8 @@ export class SceneManager {
                 if (scrollFraction < currentSceneData.states[0].threshold && 
                     this.currentScene > 0) {
                     
-                    // Clear current scene's objects
-                    this.clearSceneObjects(currentSceneData);
+                    // Clear only objects that aren't needed in the previous scene
+                    this.clearSceneObjects(this.scenes[this.currentScene - 1]);
                     
                     // Go to previous scene's initial state
                     this.currentScene--;
@@ -134,7 +164,7 @@ export class SceneManager {
                     this.scenes[this.currentScene].states[0].setup();
                     
                 } else {
-                    // Forward scrolling remains the same
+                    // Forward scrolling
                     currentSceneData.states.forEach((state, index) => {
                         if (scrollFraction >= state.threshold && this.currentState < index) {
                             this.currentState = index;
@@ -154,20 +184,32 @@ export class SceneManager {
     }
 
     clearSceneObjects(scene) {
-        // Clear shadow cylinder if it exists
-        if (this.earthScene.earth.shadowGroup) {
-            this.earthScene.earth.remove(this.earthScene.earth.shadowGroup);
-            this.earthScene.earth.shadowGroup = null;
+        const earth = this.earthScene.earth;
+        
+        // Clear 3D objects
+        if (earth.shadowGroup) {
+            earth.remove(earth.shadowGroup);
+            earth.shadowGroup = null;
         }
         
-        // Clear IR arrows if they exist
-        if (this.earthScene.earth.irArrows) {
-            this.earthScene.earth.remove(this.earthScene.earth.irArrows);
-            this.earthScene.earth.irArrows = null;
+        if (earth.irArrows) {
+            earth.remove(earth.irArrows);
+            earth.irArrows = null;
         }
         
-        // Clear annotations
-        document.getElementById('annotations-container').innerHTML = '';
+        if (earth.atmosphere) {
+            earth.remove(earth.atmosphere);
+            earth.atmosphere = null;
+        }
+        
+        // Fade out annotations
+        const annotations = document.querySelector('.annotation');
+        if (annotations) {
+            annotations.style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('annotations-container').innerHTML = '';
+            }, 300);
+        }
     }
 
     transitionToScene(newIndex) {
@@ -229,10 +271,9 @@ export class SceneManager {
         // Position annotation and line
         const annotationsContainer = document.getElementById('annotations-container');
         annotationsContainer.innerHTML = `
-            <div class="shadow-annotation">
+            <div class="annotation">
                 Area of intercepted Solar radiation: πR<sup>2</sup>
             </div>
-            <div class="annotation-line"></div>
         `;
     }
 
@@ -241,52 +282,24 @@ export class SceneManager {
             return;
         }
 
-        // Offset constants relative to end cap center
         const ANNOTATION_OFFSETS = {
             x: -250,  // pixels left of end cap center
             y: -150    // pixels above end cap center
         };
 
-        // Get end cap position in world space
         const endCapWorldPosition = this.earthScene.earth.shadowEndCapPosition;
         const vector = endCapWorldPosition.clone();
         vector.project(this.renderer.camera);
         
-        // Convert end cap position to screen coordinates
         const endCapScreen = {
             x: (vector.x * 0.5 + 0.5) * window.innerWidth,
             y: -(vector.y * 0.5 - 0.5) * window.innerHeight
         };
         
-        // Position annotation box relative to end cap
-        const annotation = document.querySelector('.shadow-annotation');
+        const annotation = document.querySelector('.annotation');
         if (annotation) {
-            annotation.style.left = `${endCapScreen.x + ANNOTATION_OFFSETS.x}px`;  // Place text box left of end cap
-            annotation.style.top = `${endCapScreen.y + ANNOTATION_OFFSETS.y}px`;   // Place text box above end cap
-        }
-        
-        // Position connecting line from end cap to annotation
-        const line = document.querySelector('.annotation-line');
-        if (line) {
-            // Line starts at end cap center
-            line.style.left = `${endCapScreen.x}px`;
-            line.style.top = `${endCapScreen.y}px`;
-            
-            const textBox = document.querySelector('.shadow-annotation');
-            if (textBox) {
-                const textRect = textBox.getBoundingClientRect();
-                // Calculate angle between end cap and text box bottom-right corner
-                const angle = Math.atan2(
-                    textRect.bottom - endCapScreen.y,
-                    textRect.right - endCapScreen.x
-                );
-                line.style.transform = `rotate(${angle}rad)`;
-                // Line length = distance from end cap to text box
-                line.style.width = `${Math.hypot(
-                    textRect.right - endCapScreen.x,
-                    textRect.bottom - endCapScreen.y
-                )}px`;
-            }
+            annotation.style.left = `${endCapScreen.x + ANNOTATION_OFFSETS.x}px`;
+            annotation.style.top = `${endCapScreen.y + ANNOTATION_OFFSETS.y}px`;
         }
     }
 

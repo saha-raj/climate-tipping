@@ -7,6 +7,19 @@ class ObjectRegistry {
     }
 
     setupDefaultObjects() {
+        // Add intro text first
+        this.definitions.set('introText', {
+            type: 'text',
+            content: {
+                title: "Earth's Energy Balance",
+                description: "Understanding how Earth maintains its temperature through a balance of incoming and outgoing energy."
+            },
+            transitions: {
+                enter: 'slideUp',
+                exit: 'slideUp'
+            }
+        });
+
         // Earth - always visible, centered
         this.definitions.set('earth', {
             type: '3d',
@@ -73,6 +86,18 @@ class ObjectRegistry {
             type: 'annotation',
             content: "Infrared radiation is emitted in all directions from Earth's surface",
             attachTo: 'irArrows',
+            position: 'center',
+            transitions: {
+                enter: 'fade',
+                exit: 'fade'
+            }
+        });
+
+        // Add atmosphere annotation
+        this.definitions.set('atmosphereAnnotation', {
+            type: 'annotation',
+            content: "The atmosphere absorbs some of the outgoing infrared radiation and re-emits it in all directions",
+            attachTo: 'atmosphere',
             position: 'center',
             transitions: {
                 enter: 'fade',
