@@ -2,7 +2,7 @@ import { ObjectRegistry } from './objectRegistry.js';
 
 export class SceneManager {
     TEXT_POSITION = {
-        top: '20%',
+        top: '10%',
         left: '3rem',
         maxWidth: '400px'
     };
@@ -36,8 +36,6 @@ export class SceneManager {
     setupScenes() {
         this.scenes = [
             {
-                title: "Introduction",
-                description: "Let's explore how Earth's temperature is regulated.",
                 objects: ['earth'],
                 states: [{
                     threshold: 0,
@@ -46,9 +44,7 @@ export class SceneManager {
                 exitThreshold: 0.1
             },
             {
-                title: "Scene 1: Energy from the Sun",
-                description: "Our planet intercepts a tiny fraction of the Sun's energy output. This incoming solar radiation, primarily in the form of visible light, is what keeps Earth warm.",
-                objects: ['earth', 'shadowCylinder', 'scene1Text'],
+                objects: ['earth', 'shadowCylinder', 'shadowAnnotation', 'scene1Text'],
                 states: [
                     {
                         threshold: 0.1,
@@ -60,10 +56,13 @@ export class SceneManager {
                         threshold: 0.3,
                         setup: () => {
                             this.earthScene.earth.createShadowCone();
+                            
+                            // Get annotation content from registry
+                            const annotDef = this.objectRegistry.getDefinition('shadowAnnotation');
                             const annotationsContainer = document.getElementById('annotations-container');
                             annotationsContainer.innerHTML = `
                                 <div class="shadow-annotation">
-                                    Area of intercepted Solar radiation: πR<sup>2</sup>
+                                    ${annotDef.content}
                                 </div>
                                 <div class="annotation-line"></div>
                             `;
@@ -87,18 +86,22 @@ export class SceneManager {
                 const windowHeight = window.innerHeight;
                 const scrollFraction = scrollY / windowHeight;
                 
-                // Handle scene transitions
-                if (scrollFraction < this.scenes[this.currentScene].states[0].threshold && 
+                const currentSceneData = this.scenes[this.currentScene];
+
+                // Handle backwards scrolling
+                if (scrollFraction < currentSceneData.states[0].threshold && 
                     this.currentScene > 0) {
-                    // Going backwards to previous scene
+                    
+                    // Clear current scene's objects
+                    this.clearSceneObjects(currentSceneData);
+                    
+                    // Go to previous scene's initial state
                     this.currentScene--;
                     this.currentState = 0;
                     this.scenes[this.currentScene].states[0].setup();
-                } else {
-                    // Going forwards
-                    const currentSceneData = this.scenes[this.currentScene];
                     
-                    // Handle state transitions within current scene
+                } else {
+                    // Forward scrolling remains the same
                     currentSceneData.states.forEach((state, index) => {
                         if (scrollFraction >= state.threshold && this.currentState < index) {
                             this.currentState = index;
@@ -106,7 +109,6 @@ export class SceneManager {
                         }
                     });
 
-                    // Forward scene transition
                     if (scrollFraction >= currentSceneData.exitThreshold && 
                         this.currentScene < this.scenes.length - 1) {
                         this.currentScene++;
@@ -116,6 +118,17 @@ export class SceneManager {
                 }
             });
         });
+    }
+
+    clearSceneObjects(scene) {
+        // Clear shadow cylinder if it exists
+        if (this.earthScene.earth.shadowGroup) {
+            this.earthScene.earth.remove(this.earthScene.earth.shadowGroup);
+            this.earthScene.earth.shadowGroup = null;
+        }
+        
+        // Clear annotations
+        document.getElementById('annotations-container').innerHTML = '';
     }
 
     transitionToScene(newIndex) {
@@ -128,26 +141,22 @@ export class SceneManager {
     }
 
     updateText() {
-        console.log('Updating text for scene:', this.currentScene);
-        const scene = this.scenes[this.currentScene];
+        const currentScene = this.scenes[this.currentScene];
+        const textId = this.currentScene === 0 ? 'introText' : 'scene1Text';
+        const textDef = this.objectRegistry.getDefinition(textId);
         
-        // Update main scene text
-        const textOverlay = document.getElementById('text-overlay');
-        textOverlay.innerHTML = `
-            <div class="scene-text">
-                <h2>${scene.title}</h2>
-                <p>${scene.description}</p>
-            </div>
-        `;
-
-        // Update annotations - only show in Scene 2
-        const annotationsContainer = document.getElementById('annotations-container');
-        annotationsContainer.innerHTML = this.currentScene === 2 ? `
-            <div class="shadow-annotation">
-                Area of intercepted Solar radiation: πR<sup>2</sup>
-            </div>
-            <div class="annotation-line"></div>
-        ` : '';
+        const textOverlay = document.querySelector('.text-overlay');
+        if (textOverlay && textDef) {
+            // Apply position styles
+            Object.assign(textOverlay.style, this.TEXT_POSITION);
+            
+            textOverlay.innerHTML = `
+                <div class="scene-text">
+                    <h2>${textDef.content.title}</h2>
+                    <p>${textDef.content.description}</p>
+                </div>
+            `;
+        }
     }
 
     positionShadowAnnotation() {

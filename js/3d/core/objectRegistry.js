@@ -19,7 +19,7 @@ class ObjectRegistry {
             }
         });
 
-        // Shadow cylinder
+        // Shadow cylinder with its annotation
         this.definitions.set('shadowCylinder', {
             type: '3d',
             model: 'shadowCylinder',
@@ -27,8 +27,19 @@ class ObjectRegistry {
             transitions: {
                 enter: 'fade',
                 exit: 'fade'
-            },
-            annotations: ['shadowEndCap']
+            }
+        });
+
+        // Shadow cylinder annotation
+        this.definitions.set('shadowAnnotation', {
+            type: 'annotation',
+            content: "Area of intercepted Solar radiation: πR<sup>2</sup>",
+            attachTo: 'shadowCylinder',
+            position: 'endCap',
+            transitions: {
+                enter: 'fade',
+                exit: 'fade'
+            }
         });
 
         // Scene 1 text
@@ -36,11 +47,20 @@ class ObjectRegistry {
             type: 'text',
             content: {
                 title: "Scene 1: Energy from the Sun",
-                description: "Our planet intercepts a tiny fraction of the Sun's energy output..."
+                description: "Our planet intercepts a tiny fraction of the Sun's energy output. This incoming solar radiation, primarily in the form of visible light, is what keeps Earth warm."
             },
-            position: {
-                start: 0,
-                final: -100  // pixels to scroll up
+            transitions: {
+                enter: 'slideUp',
+                exit: 'slideUp'
+            }
+        });
+
+        // Intro text
+        this.definitions.set('introText', {
+            type: 'text',
+            content: {
+                title: "Introduction",
+                description: "Let's explore how Earth's temperature is regulated."
             },
             transitions: {
                 enter: 'slideUp',
