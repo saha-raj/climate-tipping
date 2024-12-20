@@ -6,6 +6,8 @@ export class Earth extends THREE.Group {
         this.createEarth();
         this.shadowGroup = null;
         this.shadowEndCap = null;  // Store reference to end cap
+        this.irArrows = null;
+        this.iceFragments = null;
     }
 
     createEarth() {
@@ -215,5 +217,83 @@ export class Earth extends THREE.Group {
         arrowGroup.add(arrow);
         arrowGroup.add(arrowHeadGroup);
         this.irArrows.add(arrowGroup);
+    }
+
+    createHexIce(hexSize = 0.2) {
+        // Remove existing ice if any
+        if (this.iceFragments) {
+            this.remove(this.iceFragments);
+            this.iceFragments = null;
+        }
+
+        this.iceFragments = new THREE.Group();
+
+        // Create hexagon shape
+        const hexShape = new THREE.Shape();
+        for (let i = 0; i < 6; i++) {
+            const angle = (i / 6) * Math.PI * 2;
+            const x = hexSize * Math.cos(angle);
+            const y = hexSize * Math.sin(angle);
+            if (i === 0) {
+                hexShape.moveTo(x, y);
+            } else {
+                hexShape.lineTo(x, y);
+            }
+        }
+        hexShape.closePath();
+
+        const hexGeometry = new THREE.ShapeGeometry(hexShape);
+        const hexMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            side: THREE.DoubleSide
+        });
+
+        // Create uniform distribution points on sphere
+        const points = this.generateUniformSpherePoints(hexSize);
+
+        // Create ice fragments at each point
+        points.forEach(point => {
+            const hex = new THREE.Mesh(hexGeometry, hexMaterial);
+            
+            // Position slightly above surface
+            hex.position.copy(point);
+            hex.position.multiplyScalar(1.001);
+            
+            // Orient to face outward
+            hex.lookAt(new THREE.Vector3(0, 0, 0));
+            
+            this.iceFragments.add(hex);
+        });
+
+        this.add(this.iceFragments);
+    }
+
+    generateUniformSpherePoints(hexSize) {
+        const points = [];
+        
+        // Calculate approximate number of hexagons needed
+        // Surface area of sphere = 4πr² (r=1)
+        // Area of hexagon ≈ 2.6 * hexSize²
+        // Number of hexagons = sphere area / hexagon area
+        const sphereArea = 4 * Math.PI;
+        const hexArea = 2.6 * (hexSize * hexSize);
+        const numHexagons = Math.floor(sphereArea / hexArea);
+        
+        // Generate points using Fibonacci sphere method
+        const phi = Math.PI * (3 - Math.sqrt(5)); // golden angle
+        
+        for (let i = 0; i < numHexagons; i++) {
+            const y = 1 - (i / (numHexagons - 1)) * 2; // -1 to 1
+            const radius = Math.sqrt(1 - y * y);
+            
+            const theta = phi * i; // golden angle increment
+            
+            const x = Math.cos(theta) * radius;
+            const z = Math.sin(theta) * radius;
+            
+            points.push(new THREE.Vector3(x, y, z));
+        }
+        
+        return points;
     }
 }

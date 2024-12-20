@@ -112,6 +112,13 @@ export class SceneManager {
                             void annotationsContainer.offsetHeight;
                             const annotation = annotationsContainer.querySelector('.annotation');
                             annotation.style.opacity = '1';
+                        },
+                        cleanup: () => {
+                            // Clean up IR arrows when leaving Scene 2
+                            if (this.earthScene.earth.irArrows) {
+                                this.earthScene.earth.remove(this.earthScene.earth.irArrows);
+                                this.earthScene.earth.irArrows = null;
+                            }
                         }
                     },
                     {
@@ -146,6 +153,48 @@ export class SceneManager {
                                 this.DEFAULT_CAMERA.target,
                                 2000 // 2 seconds duration
                             );
+                        }
+                    }
+                ],
+                exitThreshold: 1.0
+            },
+            {
+                objects: ['earth', 'scene3Text'],
+                states: [
+                    {
+                        threshold: 0.7,
+                        setup: () => {
+                            // Clear IR arrows if they exist
+                            if (this.earthScene.earth.irArrows) {
+                                this.earthScene.earth.remove(this.earthScene.earth.irArrows);
+                                this.earthScene.earth.irArrows = null;
+                            }
+                            
+                            // Create hexagonal ice fragments
+                            this.earthScene.earth.createHexIce(0.2);  // Adjust size as needed
+                            
+                            // Update text
+                            this.updateText();
+                            
+                            // Add annotation
+                            const annotDef = this.objectRegistry.getDefinition('albedoAnnotation');
+                            const annotationsContainer = document.getElementById('annotations-container');
+                            annotationsContainer.innerHTML = `
+                                <div class="annotation" style="opacity: 0">
+                                    ${annotDef.content}
+                                </div>
+                            `;
+                            
+                            void annotationsContainer.offsetHeight;
+                            const annotation = annotationsContainer.querySelector('.annotation');
+                            annotation.style.opacity = '1';
+                        },
+                        cleanup: () => {
+                            // Optional: clean up ice fragments when leaving scene
+                            if (this.earthScene.earth.iceFragments) {
+                                this.earthScene.earth.remove(this.earthScene.earth.iceFragments);
+                                this.earthScene.earth.iceFragments = null;
+                            }
                         }
                     }
                 ],

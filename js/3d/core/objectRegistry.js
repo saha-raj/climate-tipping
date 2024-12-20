@@ -104,6 +104,29 @@ class ObjectRegistry {
                 exit: 'fade'
             }
         });
+
+        // Add Scene 3 text
+        this.definitions.set('scene3Text', {
+            type: 'text',
+            content: {
+                title: "Scene 3: Albedo",
+                description: "Earth's surface reflects some of the incoming sunlight back to space. Ice and snow are particularly reflective, making them important for Earth's energy balance."
+            },
+            transitions: {
+                enter: 'slideUp',
+                exit: 'slideUp'
+            }
+        });
+
+        // Add albedo annotation
+        this.definitions.set('albedoAnnotation', {
+            type: 'annotation',
+            content: "Ice and snow have high albedo, reflecting most incoming sunlight back to space",
+            transitions: {
+                enter: 'fade',
+                exit: 'fade'
+            }
+        });
     }
 
     getDefinition(id) {
