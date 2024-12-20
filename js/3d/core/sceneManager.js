@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { ObjectRegistry } from './objectRegistry.js';
 
 export class SceneManager {
@@ -5,6 +6,11 @@ export class SceneManager {
         top: '10%',
         left: '3rem',
         maxWidth: '400px'
+    };
+
+    DEFAULT_CAMERA = {
+        position: new THREE.Vector3(8, 6, -12),
+        target: new THREE.Vector3(0, 0, 0)
     };
 
     constructor({ renderer, earthScene }) {
@@ -39,7 +45,10 @@ export class SceneManager {
                 objects: ['earth'],
                 states: [{
                     threshold: 0,
-                    setup: () => this.updateText()
+                    setup: () => {
+                        this.resetToDefaultCamera();
+                        this.updateText();
+                    }
                 }],
                 exitThreshold: 0.1
             },
@@ -49,6 +58,7 @@ export class SceneManager {
                     {
                         threshold: 0.1,
                         setup: () => {
+                            this.resetToDefaultCamera();
                             this.updateText();
                         }
                     },
@@ -71,6 +81,29 @@ export class SceneManager {
                     }
                 ],
                 exitThreshold: 0.7
+            },
+            {
+                objects: ['earth', 'shadowCylinder', 'irArrows', 'scene2Text'],
+                states: [
+                    {
+                        threshold: 0.7,
+                        setup: () => {
+                            this.resetToDefaultCamera();
+                            this.updateText();
+                            this.earthScene.earth.createIRArrows();
+                            
+                            // Get annotation content from registry
+                            const annotDef = this.objectRegistry.getDefinition('irArrowsAnnotation');
+                            const annotationsContainer = document.getElementById('annotations-container');
+                            annotationsContainer.innerHTML = `
+                                <div class="shadow-annotation">
+                                    ${annotDef.content}
+                                </div>
+                            `;
+                        }
+                    }
+                ],
+                exitThreshold: 1.0
             }
         ];
     }
@@ -142,7 +175,22 @@ export class SceneManager {
 
     updateText() {
         const currentScene = this.scenes[this.currentScene];
-        const textId = this.currentScene === 0 ? 'introText' : 'scene1Text';
+        let textId;
+        
+        switch(this.currentScene) {
+            case 0:
+                textId = 'introText';
+                break;
+            case 1:
+                textId = 'scene1Text';
+                break;
+            case 2:
+                textId = 'scene2Text';
+                break;
+            default:
+                textId = 'introText';
+        }
+        
         const textDef = this.objectRegistry.getDefinition(textId);
         
         const textOverlay = document.querySelector('.text-overlay');
@@ -240,5 +288,30 @@ export class SceneManager {
         window.addEventListener('resize', () => {
             this.updateAnnotationPosition();
         });
+    }
+
+    resetToDefaultCamera(duration = 1000) {
+        const startPosition = this.renderer.camera.position.clone();
+        const startTime = Date.now();
+        
+        const animate = () => {
+            const currentTime = Date.now();
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Smooth easing function
+            const eased = 1 - Math.pow(1 - progress, 3);
+            
+            // Interpolate position
+            const newPosition = startPosition.clone().lerp(this.DEFAULT_CAMERA.position, eased);
+            this.renderer.camera.position.copy(newPosition);
+            this.renderer.camera.lookAt(this.DEFAULT_CAMERA.target);
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+        
+        animate();
     }
 }

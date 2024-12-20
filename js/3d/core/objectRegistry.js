@@ -55,16 +55,28 @@ class ObjectRegistry {
             }
         });
 
-        // Intro text
-        this.definitions.set('introText', {
+        // Add Scene 2 text
+        this.definitions.set('scene2Text', {
             type: 'text',
             content: {
-                title: "Introduction",
-                description: "Let's explore how Earth's temperature is regulated."
+                title: "Scene 2: Outgoing Energy",
+                description: "Earth's surface emits infrared radiation. This is how our planet loses heat to space."
             },
             transitions: {
                 enter: 'slideUp',
                 exit: 'slideUp'
+            }
+        });
+
+        // Add IR Arrows annotation
+        this.definitions.set('irArrowsAnnotation', {
+            type: 'annotation',
+            content: "Infrared radiation is emitted in all directions from Earth's surface",
+            attachTo: 'irArrows',
+            position: 'center',
+            transitions: {
+                enter: 'fade',
+                exit: 'fade'
             }
         });
     }
