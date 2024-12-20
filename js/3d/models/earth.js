@@ -219,7 +219,7 @@ export class Earth extends THREE.Group {
         this.irArrows.add(arrowGroup);
     }
 
-    createHexIce(hexSize = 0.2) {
+    createHexIce(hexSize = 0.05) {
         // Remove existing ice if any
         if (this.iceFragments) {
             this.remove(this.iceFragments);
@@ -248,42 +248,14 @@ export class Earth extends THREE.Group {
             side: THREE.DoubleSide
         });
 
-        // Create uniform distribution points on sphere
-        const points = this.generateUniformSpherePoints(hexSize);
-
-        // Create ice fragments at each point
-        points.forEach(point => {
-            const hex = new THREE.Mesh(hexGeometry, hexMaterial);
-            
-            // Position slightly above surface
-            hex.position.copy(point);
-            hex.position.multiplyScalar(1.001);
-            
-            // Orient to face outward
-            hex.lookAt(new THREE.Vector3(0, 0, 0));
-            
-            this.iceFragments.add(hex);
-        });
-
-        this.add(this.iceFragments);
-    }
-
-    generateUniformSpherePoints(hexSize) {
-        const points = [];
-        
-        // Calculate approximate number of hexagons needed
-        // Surface area of sphere = 4πr² (r=1)
-        // Area of hexagon ≈ 2.6 * hexSize²
-        // Number of hexagons = sphere area / hexagon area
-        const sphereArea = 4 * Math.PI;
-        const hexArea = 2.6 * (hexSize * hexSize);
-        const numHexagons = Math.floor(sphereArea / hexArea);
+        // Fixed number of points
+        const FIXED_NUM_HEXAGONS = 200;  // Adjust this number as needed
         
         // Generate points using Fibonacci sphere method
         const phi = Math.PI * (3 - Math.sqrt(5)); // golden angle
         
-        for (let i = 0; i < numHexagons; i++) {
-            const y = 1 - (i / (numHexagons - 1)) * 2; // -1 to 1
+        for (let i = 0; i < FIXED_NUM_HEXAGONS; i++) {
+            const y = 1 - (i / (FIXED_NUM_HEXAGONS - 1)) * 2; // -1 to 1
             const radius = Math.sqrt(1 - y * y);
             
             const theta = phi * i; // golden angle increment
@@ -291,9 +263,45 @@ export class Earth extends THREE.Group {
             const x = Math.cos(theta) * radius;
             const z = Math.sin(theta) * radius;
             
-            points.push(new THREE.Vector3(x, y, z));
+            const hex = new THREE.Mesh(hexGeometry, hexMaterial);
+            
+            // Position slightly above surface
+            hex.position.set(x, y, z);
+            hex.position.multiplyScalar(1.001);
+            
+            // Orient to face outward
+            hex.lookAt(new THREE.Vector3(0, 0, 0));
+            
+            this.iceFragments.add(hex);
         }
+
+        this.add(this.iceFragments);
+    }
+
+    resizeHexIce(targetSize, duration = 1.0) {
+        if (!this.iceFragments) return;
         
-        return points;
+        const startTime = performance.now();
+        const startScale = 1;
+        const endScale = targetSize / 0.05;  // Calculate scale factor based on initial size of 0.05
+        
+        const animate = () => {
+            const elapsed = (performance.now() - startTime) / 1000;
+            const progress = Math.min(elapsed / duration, 1.0);
+            
+            // Smooth easing
+            const easedProgress = progress * (2 - progress);
+            
+            const currentScale = startScale + (endScale - startScale) * easedProgress;
+            this.iceFragments.children.forEach(hex => {
+                hex.scale.set(currentScale, currentScale, 1);
+            });
+            
+            if (progress < 1.0) {
+                requestAnimationFrame(animate);
+            }
+        };
+        
+        animate();
     }
 }

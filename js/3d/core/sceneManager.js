@@ -170,13 +170,11 @@ export class SceneManager {
                                 this.earthScene.earth.irArrows = null;
                             }
                             
-                            // Create hexagonal ice fragments
-                            this.earthScene.earth.createHexIce(0.2);  // Adjust size as needed
+                            // Create initial small hexagonal ice fragments
+                            this.earthScene.earth.createHexIce(0.05);
                             
-                            // Update text
                             this.updateText();
                             
-                            // Add annotation
                             const annotDef = this.objectRegistry.getDefinition('albedoAnnotation');
                             const annotationsContainer = document.getElementById('annotations-container');
                             annotationsContainer.innerHTML = `
@@ -188,13 +186,18 @@ export class SceneManager {
                             void annotationsContainer.offsetHeight;
                             const annotation = annotationsContainer.querySelector('.annotation');
                             annotation.style.opacity = '1';
-                        },
-                        cleanup: () => {
-                            // Optional: clean up ice fragments when leaving scene
-                            if (this.earthScene.earth.iceFragments) {
-                                this.earthScene.earth.remove(this.earthScene.earth.iceFragments);
-                                this.earthScene.earth.iceFragments = null;
-                            }
+                        }
+                    },
+                    {
+                        threshold: 0.8,
+                        setup: () => {
+                            this.earthScene.earth.resizeHexIce(0.1, 1.5);
+                        }
+                    },
+                    {
+                        threshold: 0.9,
+                        setup: () => {
+                            this.earthScene.earth.resizeHexIce(0.15, 1.5);
                         }
                     }
                 ],
@@ -299,6 +302,9 @@ export class SceneManager {
                 break;
             case 2:
                 textId = 'scene2Text';
+                break;
+            case 3:
+                textId = 'scene3Text';
                 break;
             default:
                 textId = 'introText';
